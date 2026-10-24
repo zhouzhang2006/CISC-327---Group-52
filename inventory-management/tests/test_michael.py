@@ -175,3 +175,14 @@ def test_create_supplier(client):
     assert found_supplier["id"] == supplier_id
     assert found_supplier["name"] == "Test Supplier"
     assert found_supplier["contact_email"] == "test@supplier.com"
+
+# extra test - get a product that does not exist
+def test_get_missing_product(client):
+
+    # try to get a product with an ID that does not exist
+    response = client.get("/products/999")
+
+    assert response.status_code == 404
+
+    # make sure the response explains the error
+    assert response.get_json()["error"] == "Product not found"
