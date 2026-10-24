@@ -186,3 +186,14 @@ def test_get_missing_product(client):
 
     # make sure the response explains the error
     assert response.get_json()["error"] == "Product not found"
+
+# extra test #2 - get a supplier that does not exist
+def test_get_missing_supplier(client):
+
+    # try to get a supplier with an ID that does not exist
+    response = client.get("/suppliers/999")
+
+    assert response.status_code == 404
+
+    # make sure the response explains the error
+    assert response.get_json()["error"] == "Supplier not found"
