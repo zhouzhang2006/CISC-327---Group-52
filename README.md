@@ -2,6 +2,4 @@
 
 # Project: Inventory Management
 
-# Assignment 1: 
-- Introduces Requirements Elicitation
 
