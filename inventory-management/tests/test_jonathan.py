@@ -240,3 +240,31 @@ def test_transaction_retrival(client):
 			"supplier_id": None,
 		},
 	]
+
+
+def test_low_stock(client):
+	"""Tests if the low stock endpoint returns the correct list of products that are below the reorder threshold."""
+
+	# Create products
+	low_product = {
+		"name": "Low Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 5,
+		"reorder_level": 10,
+	}
+	good_product = {
+		"name": "Good Product",
+		"sku": "PROD-002",
+		"unit_price": 19.99,
+		"quantity_on_hand": 15,
+		"reorder_level": 10,
+	}
+
+	client.post("/products", json=low_product)
+	client.post("/products", json=good_product)
+
+	get_resp = client.get("/products/low-stock")
+	assert get_resp.status_code == 200
+	assert len(get_resp.get_json()) == 1
+	assert get_resp.get_json()[0]["name"] == "Low Product"
