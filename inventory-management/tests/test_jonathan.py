@@ -108,3 +108,27 @@ def test_update_supplier(client):
 	get_resp = client.get(f"/suppliers/{supplier_id}")
 	assert get_resp.status_code == 200
 	assert get_resp.get_json() == (supplier | {"id": supplier_id})
+
+
+def test_delete_supplier(client):
+	"""Creates a supplier and tests to see if it gets deleted.
+	Also tests for the application to gracefully handle an unknown supplier id with a 404.
+	"""
+
+	# Not Found edgecase
+	not_found_resp = client.delete("/suppliers/0")
+	assert not_found_resp.status_code == 404
+
+	# Create the supplier
+	supplier = {"name": "Test Supplier", "contact_email": "supplier@example.com"}
+	create_resp = client.post("/suppliers", json=supplier)
+	assert create_resp.status_code == 201
+	supplier_id = create_resp.get_json()["id"]
+
+	# Delete the supplier
+	delete_resp = client.delete(f"/suppliers/{supplier_id}")
+	assert delete_resp.status_code == 204
+
+	# Verify deletion
+	get_resp = client.get(f"/suppliers/{supplier_id}")
+	assert get_resp.status_code == 404
