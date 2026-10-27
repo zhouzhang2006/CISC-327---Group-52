@@ -48,6 +48,7 @@ app working without a REST client, and calls the same in-memory store.
 | PUT | `/products/<id>` | Update a product |
 | DELETE | `/products/<id>` | Delete a product |
 | GET | `/products/<id>/stock-level` | Current quantity on hand |
+| GET | `/products/<id>/supplier` | The supplier information for a product |
 | GET | `/suppliers` | List all suppliers |
 | POST | `/suppliers` | Create a supplier |
 | GET | `/suppliers/<id>` | Get one supplier |
