@@ -26,7 +26,7 @@ def create_product():
     data = request.get_json()
     product_id = store.next_id("product")
     supplier_id = data.get("supplier_id")
-    if supplier_id not in store.suppliers:
+    if supplier_id is not None and supplier_id not in store.suppliers:
         return jsonify({"error": "Supplier not found"}), 400
     product = Product(
         id=product_id,
@@ -57,7 +57,7 @@ def update_product(product_id):
     data = request.get_json()
     product.name = data.get("name", product.name)
     product.supplier_id = data.get("supplier_id", product.supplier_id)
-    if product.supplier_id not in store.suppliers:
+    if product.supplier_id is not None and product.supplier_id not in store.suppliers:
         return jsonify({"error": "Supplier not found"}), 400
     product.sku = data.get("sku", product.sku)
     product.unit_price = data.get("unit_price", product.unit_price)
