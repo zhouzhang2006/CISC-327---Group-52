@@ -80,3 +80,13 @@ def stock_level(product_id):
     if product is None:
         return jsonify({"error": "Product not found"}), 404
     return jsonify({"product_id": product.id, "quantity_on_hand": product.quantity_on_hand})
+
+@products_bp.route("/<int:product_id>/supplier", methods=["GET"])
+def product_supplier(product_id):
+	product = store.products.get(product_id)
+	if product is None:
+		return jsonify({"error": "Product not found"}), 404
+	supplier = store.suppliers.get(product.supplier_id)
+	if supplier is None:
+		return jsonify({"error": "Supplier unknown"}), 404
+	return jsonify(supplier.to_dict())
