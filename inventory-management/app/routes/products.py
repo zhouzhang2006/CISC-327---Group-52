@@ -25,9 +25,13 @@ def low_stock():
 def create_product():
     data = request.get_json()
     product_id = store.next_id("product")
+    supplier_id = data.get("supplier_id")
+    if supplier_id not in store.suppliers:
+        return jsonify({"error": "Supplier not found"}), 400
     product = Product(
         id=product_id,
         name=data["name"],
+        supplier_id=data.get("supplier_id"),
         sku=data["sku"],
         unit_price=data.get("unit_price", 0.0),
         quantity_on_hand=data.get("quantity_on_hand", 0),
@@ -52,6 +56,9 @@ def update_product(product_id):
         return jsonify({"error": "Product not found"}), 404
     data = request.get_json()
     product.name = data.get("name", product.name)
+    product.supplier_id = data.get("supplier_id", product.supplier_id)
+    if product.supplier_id not in store.suppliers:
+        return jsonify({"error": "Supplier not found"}), 400
     product.sku = data.get("sku", product.sku)
     product.unit_price = data.get("unit_price", product.unit_price)
     product.quantity_on_hand = data.get("quantity_on_hand", product.quantity_on_hand)
