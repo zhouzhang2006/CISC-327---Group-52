@@ -20,16 +20,15 @@ def test_update_product(client):
 	product_id = create_resp.get_json()["id"]
 
 	# Update the product & verify response
-	product["name"] = "Updated Product"
-	product["quantity_on_hand"] = 45
-	update_resp = client.put(f"/products/{product_id}", json=product)
+	changes = {"name": "Updated Product", "quantity_on_hand": 45}
+	update_resp = client.put(f"/products/{product_id}", json=product | changes)
 	assert update_resp.status_code == 200
-	assert update_resp.get_json() == product | {"id": product_id}
+	assert update_resp.get_json() == create_resp.get_json() | changes
 
 	# Verify update was properly saved
 	get_resp = client.get(f"/products/{product_id}")
 	assert get_resp.status_code == 200
-	assert get_resp.get_json() == product | {"id": product_id}
+	assert get_resp.get_json() == create_resp.get_json() | changes
 
 
 def test_delete_product(client):
