@@ -132,3 +132,111 @@ def test_delete_supplier(client):
 	# Verify deletion
 	get_resp = client.get(f"/suppliers/{supplier_id}")
 	assert get_resp.status_code == 404
+
+
+def test_stock_movement_entry(client):
+	"""Creates a supplier and product and tests recording a stock movement in and out."""
+
+	# Create the supplier
+	supplier = {"name": "Test Supplier", "contact_email": "supplier@example.com"}
+	supplier_resp = client.post("/suppliers", json=supplier)
+	assert supplier_resp.status_code == 201
+	supplier_id = supplier_resp.get_json()["id"]
+
+	# Create the product
+	product = {
+		"name": "TEST Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 50,
+		"reorder_level": 10,
+	}
+	product_resp = client.post("/products", json=product)
+	assert product_resp.status_code == 201
+	product_id = product_resp.get_json()["id"]
+
+	# Test stock movement in
+	movement = {
+		"product_id": product_id,
+		"supplier_id": supplier_id,
+		"quantity": 10,
+		"type": "IN",
+	}
+	in_resp = client.post("/transactions", json=movement)
+	assert in_resp.status_code == 201
+	assert in_resp.get_json() == movement | {
+		"id": in_resp.get_json()["id"],
+		"transaction_date": in_resp.get_json()["transaction_date"],
+	}
+	assert in_resp.get_json()["transaction_date"] is not None
+
+	# Verify stock level
+	get_resp = client.get(f"/products/{product_id}")
+	assert get_resp.status_code == 200
+	assert get_resp.get_json()["quantity_on_hand"] == 60
+
+	# Test stock movement out
+	movement = {"product_id": product_id, "quantity": 5, "type": "OUT"}
+	out_resp = client.post("/transactions", json=movement)
+	assert out_resp.status_code == 201
+	assert out_resp.get_json() == movement | {
+		"id": out_resp.get_json()["id"],
+		"transaction_date": out_resp.get_json()["transaction_date"],
+		"supplier_id": None,
+	}
+	assert out_resp.get_json()["transaction_date"] is not None
+
+	# Verify stock level
+	get_resp = client.get(f"/products/{product_id}")
+	assert get_resp.status_code == 200
+	assert get_resp.get_json()["quantity_on_hand"] == 55
+
+
+def test_transaction_retrival(client):
+	"""Creates a supplier and product, creates some transactions and tests retrieving transactions."""
+
+	# Create the supplier
+	supplier = {"name": "Test Supplier", "contact_email": "supplier@example.com"}
+	supplier_resp = client.post("/suppliers", json=supplier)
+	assert supplier_resp.status_code == 201
+	supplier_id = supplier_resp.get_json()["id"]
+
+	# Create the product
+	product = {
+		"name": "TEST Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 50,
+		"reorder_level": 10,
+	}
+	product_resp = client.post("/products", json=product)
+	assert product_resp.status_code == 201
+	product_id = product_resp.get_json()["id"]
+
+	# Create transactions
+	trans_1 = {
+		"product_id": product_id,
+		"supplier_id": supplier_id,
+		"quantity": 10,
+		"type": "IN",
+	}
+	in_resp = client.post("/transactions", json=trans_1)
+	assert in_resp.status_code == 201
+	trans_1["id"] = in_resp.get_json()["id"]
+
+	trans_2 = {"product_id": product_id, "quantity": 5, "type": "OUT"}
+	out_resp = client.post("/transactions", json=trans_2)
+	assert out_resp.status_code == 201
+	trans_2["id"] = out_resp.get_json()["id"]
+
+	# Test retrieving all transactions
+	get_resp = client.get("/transactions")
+	assert get_resp.status_code == 200
+	assert get_resp.get_json() == [
+		trans_1 | {"transaction_date": in_resp.get_json()["transaction_date"]},
+		trans_2
+		| {
+			"transaction_date": out_resp.get_json()["transaction_date"],
+			"supplier_id": None,
+		},
+	]
