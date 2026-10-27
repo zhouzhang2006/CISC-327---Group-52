@@ -81,3 +81,30 @@ def test_get_supplier(client):
 	get_resp = client.get(f"/suppliers/{supplier_id}")
 	assert get_resp.status_code == 200
 	assert get_resp.get_json() == (supplier | {"id": supplier_id})
+
+
+def test_update_supplier(client):
+	"""Creates a supplier and tests if supplier updates can be successfully applied.
+	Also ensures updates for an unknown supplier id gracefully return a 404.
+	"""
+
+	# Not Found edgecase
+	not_found_resp = client.put("/suppliers/0")
+	assert not_found_resp.status_code == 404
+
+	# Create the supplier
+	supplier = {"name": "Test Supplier", "contact_email": "supplier@example.com"}
+	create_resp = client.post("/suppliers", json=supplier)
+	assert create_resp.status_code == 201
+	supplier_id = create_resp.get_json()["id"]
+
+	# Update the supplier & verify response
+	supplier["name"] = "Updated Supplier"
+	update_resp = client.put(f"/suppliers/{supplier_id}", json=supplier)
+	assert update_resp.status_code == 200
+	assert update_resp.get_json() == (supplier | {"id": supplier_id})
+
+	# Verify update was properly saved
+	get_resp = client.get(f"/suppliers/{supplier_id}")
+	assert get_resp.status_code == 200
+	assert get_resp.get_json() == (supplier | {"id": supplier_id})
