@@ -24,6 +24,14 @@ def low_stock():
 @products_bp.route("", methods=["POST"])
 def create_product():
     data = request.get_json()
+
+    # get the quantity entered by the user
+    quantity = data.get("quantity_on_hand", 0)
+
+    # check that the quantity is a valid non-negative integer
+    if type(quantity) != int or quantity < 0:
+        return jsonify({"error": "Quantity must be a non-negative integer"}), 400
+
     product_id = store.next_id("product")
     supplier_id = data.get("supplier_id")
     if supplier_id is not None and supplier_id not in store.suppliers:
@@ -34,10 +42,12 @@ def create_product():
         supplier_id=data.get("supplier_id"),
         sku=data["sku"],
         unit_price=data.get("unit_price", 0.0),
-        quantity_on_hand=data.get("quantity_on_hand", 0),
-        reorder_level=data.get("reorder_level", 0),
+        quantity_on_hand=quantity,
+        reorder_level=data.get("reorder_level", 0)
     )
+
     store.products[product_id] = product
+
     return jsonify(product.to_dict()), 201
 
 
