@@ -20,16 +20,15 @@ def test_update_product(client):
 	product_id = create_resp.get_json()["id"]
 
 	# Update the product & verify response
-	product["name"] = "Updated Product"
-	product["quantity_on_hand"] = 45
-	update_resp = client.put(f"/products/{product_id}", json=product)
+	changes = {"name": "Updated Product", "quantity_on_hand": 45}
+	update_resp = client.put(f"/products/{product_id}", json=product | changes)
 	assert update_resp.status_code == 200
-	assert update_resp.get_json() == product | {"id": product_id}
+	assert update_resp.get_json() == create_resp.get_json() | changes
 
 	# Verify update was properly saved
 	get_resp = client.get(f"/products/{product_id}")
 	assert get_resp.status_code == 200
-	assert get_resp.get_json() == product | {"id": product_id}
+	assert get_resp.get_json() == create_resp.get_json() | changes
 
 
 def test_delete_product(client):
@@ -268,3 +267,56 @@ def test_low_stock(client):
 	assert get_resp.status_code == 200
 	assert len(get_resp.get_json()) == 1
 	assert get_resp.get_json()[0]["name"] == "Low Product"
+
+
+# Tests for new features
+def test_product_supplier_link(client):
+	"""Tests if the product supplier link is correctly established and retrievable."""
+
+	# Create the supplier
+	supplier = {"name": "Test Supplier", "contact_email": "supplier@example.com"}
+	supplier_resp = client.post("/suppliers", json=supplier)
+	assert supplier_resp.status_code == 201
+	supplier_id = supplier_resp.get_json()["id"]
+
+	# Create the product
+	product = {
+		"name": "TEST Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 50,
+		"reorder_level": 10,
+		"supplier_id": supplier_id,
+	}
+	product_resp = client.post("/products", json=product)
+	assert product_resp.status_code == 201
+	product_id = product_resp.get_json()["id"]
+
+	# Verify product's supplier_id is correct
+	get_resp = client.get(f"/products/{product_id}")
+	assert get_resp.status_code == 200
+	assert get_resp.get_json()["supplier_id"] == supplier_id
+
+	# Verify supplier endpoint
+	get_supplier_resp = client.get(f"/suppliers/{supplier_id}")
+	assert get_supplier_resp.status_code == 200
+	assert get_supplier_resp.get_json()["id"] == supplier_id
+	assert get_supplier_resp.get_json()["name"] == "Test Supplier"
+	assert get_supplier_resp.get_json()["contact_email"] == "supplier@example.com"
+
+
+def test_product_creation_with_invalid_supplier(client):
+	"""Tests that creating a product with a non-existent supplier_id returns a 400 error."""
+
+	# Attempt to create a product with an invalid supplier_id
+	product = {
+		"name": "Invalid Supplier Product",
+		"sku": "PROD-003",
+		"unit_price": 9.99,
+		"quantity_on_hand": 50,
+		"reorder_level": 10,
+		"supplier_id": 9999,  # Non-existent supplier_id
+	}
+	create_resp = client.post("/products", json=product)
+	assert create_resp.status_code == 400
+	assert create_resp.get_json() == {"error": "Supplier not found"}
