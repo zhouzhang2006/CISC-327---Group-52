@@ -50,7 +50,7 @@ def send_notification(recipient: str, subject: str, message: str) -> bool:
 
     _notifications.append({
         "recipient": recipient,
-        "subject": subject,
+        "subject": "Inventory Management Notification: " + subject,
         "message": message,
     })
     return True
