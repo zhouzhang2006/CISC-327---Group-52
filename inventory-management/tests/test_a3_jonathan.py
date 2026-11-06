@@ -141,6 +141,7 @@ def test_receive_purchase_order(client):
 
 
 def test_purchase_order_model():
+	"""ensures the po model gets created correctly"""
 	po = PurchaseOrder(
 		id=1,
 		supplier_id=2,
@@ -155,3 +156,81 @@ def test_purchase_order_model():
 	assert po.status == "pending"
 	assert po.created_date == date.today()
 	assert po.received_date == None
+
+
+def test_supplier_products(client):
+	"""Tests to ensure products received from a given supplier are returned.
+	Also tests to ensure unknown supplier ids are correctly rejected.
+	"""
+	# Test 404
+	res = client.get("suppliers/0/products")
+	assert res.status_code == 404
+
+	# Create products and suppliers
+	product = {
+		"name": "Original Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 50,
+		"reorder_level": 10,
+	}
+	create_resp = client.post("/products", json=product)
+	assert create_resp.status_code == 201
+	product_id = create_resp.get_json()["id"]
+	product2 = {
+		"name": "Another Product",
+		"sku": "PROD-002",
+		"unit_price": 5.99,
+		"quantity_on_hand": 10,
+		"reorder_level": 5,
+	}
+	create_resp = client.post("/products", json=product2)
+	assert create_resp.status_code == 201
+	product2_id = create_resp.get_json()["id"]
+	product3 = {
+		"name": "Other Product",
+		"sku": "PROD-003",
+		"unit_price": 5.99,
+		"quantity_on_hand": 10,
+		"reorder_level": 5,
+	}
+	create_resp = client.post("/products", json=product3)
+	assert create_resp.status_code == 201
+	supplier = {"name": "Test Supplier", "contact_email": "supplier@example.com"}
+	create_resp = client.post("/suppliers", json=supplier)
+	assert create_resp.status_code == 201
+	supplier_id = create_resp.get_json()["id"]
+
+	# test the route, expect nothing
+	res = client.get(f"/suppliers/{supplier_id}/products")
+	assert res.status_code == 200
+	assert res.get_json() == []
+
+	# Create a few transactions
+	trans_1 = {
+		"product_id": product_id,
+		"supplier_id": supplier_id,
+		"quantity": 10,
+		"type": "IN",
+	}
+	in_resp = client.post("/transactions", json=trans_1)
+	assert in_resp.status_code == 201
+	trans_1["id"] = in_resp.get_json()["id"]
+
+	trans_2 = {
+		"product_id": product2_id,
+		"supplier_id": supplier_id,
+		"quantity": 5,
+		"type": "IN",
+	}
+	out_resp = client.post("/transactions", json=trans_2)
+	assert out_resp.status_code == 201
+	trans_2["id"] = out_resp.get_json()["id"]
+
+	# test the route
+	res = client.get(f"/suppliers/{supplier_id}/products")
+	assert res.status_code == 200
+	json = res.get_json()
+	assert len(json) == 2
+	assert json[0]["id"] in [product_id, product2_id]
+	assert json[1]["id"] in [product_id, product2_id]
