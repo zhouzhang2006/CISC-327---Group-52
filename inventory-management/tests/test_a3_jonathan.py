@@ -1,5 +1,7 @@
 from datetime import date
 
+from app.models.purchase_order import PurchaseOrder
+
 
 def test_list_empty_purchase_orders(client):
 	"""Test listing zero purchase orders"""
@@ -136,3 +138,20 @@ def test_receive_purchase_order(client):
 	trans_res = client.get("/transactions")
 	assert trans_res.status_code == 200
 	assert transaction_count == len(trans_res.get_json())
+
+
+def test_purchase_order_model():
+	po = PurchaseOrder(
+		id=1,
+		supplier_id=2,
+		product_id=3,
+		quantity_ordered=100,
+		status="pending",
+	)
+	assert po.id == 1
+	assert po.supplier_id == 2
+	assert po.product_id == 3
+	assert po.quantity_ordered == 100
+	assert po.status == "pending"
+	assert po.created_date == date.today()
+	assert po.received_date == None
