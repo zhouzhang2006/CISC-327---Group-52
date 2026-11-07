@@ -1,0 +1,26 @@
+defaults:
+  run:
+    working-directory: ./inventory-management
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  pytest:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: 3.14
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests with minimum coverage
+        run: python -m pytest -v --cov=app --cov-report=term-missing --cov-fail-under=90
