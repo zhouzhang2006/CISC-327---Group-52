@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request
 
+# we have to import the send_notification function from the notification_service module
+from notification_service import send_notification
 from app import store
 from app.models.transaction import Transaction
 
@@ -12,12 +14,13 @@ def list_transactions():
     product_id = request.args.get("product_id", type=int)
     supplier_id = request.args.get("supplier_id", type=int)
     if product_id is not None:
-        results = [t for t in results if t.supplier_id == product_id]
+        results = [t for t in results if t.product_id == product_id]
     if supplier_id is not None:
         results = [t for t in results if t.supplier_id == supplier_id]
     return jsonify([t.to_dict() for t in results])
 
 
+# modified create_transaction function to send a notification when a product's quantity_on_hand is at or below its reorder_level
 @transactions_bp.route("", methods=["POST"])
 def create_transaction():
     data = request.get_json()
@@ -44,4 +47,17 @@ def create_transaction():
         quantity=quantity,
     )
     store.transactions[transaction_id] = transaction
-    return jsonify(transaction.to_dict()), 201
+
+    response = transaction.to_dict()
+
+    if tx_type == "OUT" and product.quantity_on_hand <= product.reorder_level:
+        notification_sent = send_notification(
+            "manager@example.com",
+            "Low Stock Alert",
+            f"Product {product.name} has only {product.quantity_on_hand} units remaining."
+        )
+
+        response["notification_sent"] = notification_sent
+
+    return jsonify(response), 201
+
