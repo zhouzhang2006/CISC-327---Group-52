@@ -1,4 +1,5 @@
 from datetime import date
+from unittest.mock import patch
 
 from app.models.purchase_order import PurchaseOrder
 
@@ -266,3 +267,56 @@ def test_ui_post_transaction(client):
 	assert transactions[0]["product_id"] == product_id
 	assert transactions[0]["type"] == "OUT"
 	assert transactions[0]["quantity"] == 5
+
+
+# Notification tests
+def test_notification_send_fail(client):
+	"""Tests that the notification sent value is false when the notification fails to send."""
+	# Create product and supplier
+	product = {
+		"name": "Original Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 30,
+		"reorder_level": 25,
+	}
+	create_resp = client.post("/products", json=product)
+	assert create_resp.status_code == 201
+	product_id = create_resp.get_json()["id"]
+	# Notification trigger scenario
+	tx = {
+		"product_id": product_id,
+		"type": "OUT",
+		"quantity": 15,
+	}
+	with patch("app.routes.transactions.send_notification", return_value=False):
+		create_resp = client.post("/transactions", json=tx)
+		assert create_resp.status_code == 201
+		assert create_resp.get_json()["notification_sent"] == False
+
+
+def test_notification_not_sent(client):
+	"""Tests that a notification is not sent when the stock level remains above the alert level"""
+	# Create product
+	product = {
+		"name": "Original Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 30,
+		"reorder_level": 25,
+	}
+	create_resp = client.post("/products", json=product)
+	assert create_resp.status_code == 201
+	product_id = create_resp.get_json()["id"]
+	# Test notification not triggered
+	tx = {
+		"product_id": product_id,
+		"type": "OUT",
+		"quantity": 4,
+	}
+	with patch(
+		"app.routes.transactions.send_notification", return_value=False
+	) as mock_send:
+		create_resp = client.post("/transactions", json=tx)
+		assert create_resp.status_code == 201
+		mock_send.assert_not_called()
