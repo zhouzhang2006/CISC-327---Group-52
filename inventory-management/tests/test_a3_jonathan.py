@@ -234,3 +234,35 @@ def test_supplier_products(client):
 	assert len(json) == 2
 	assert json[0]["id"] in [product_id, product2_id]
 	assert json[1]["id"] in [product_id, product2_id]
+
+
+def test_ui_post_transaction(client):
+	"""Tests the UI route for posting a transaction."""
+	# Create product and supplier
+	product = {
+		"name": "Original Product",
+		"sku": "PROD-001",
+		"unit_price": 9.99,
+		"quantity_on_hand": 50,
+		"reorder_level": 10,
+	}
+	create_resp = client.post("/products", json=product)
+	assert create_resp.status_code == 201
+	product_id = create_resp.get_json()["id"]
+
+	tx = {
+		"product_id": product_id,
+		"type": "OUT",
+		"quantity": 5,
+	}
+	create_resp = client.post("/ui/transactions", data=tx)
+	assert create_resp.status_code == 302
+
+	# Ensure the transaction was saved
+	res_transactions = client.get("/transactions")
+	assert res_transactions.status_code == 200
+	transactions = res_transactions.get_json()
+	assert len(transactions) == 1
+	assert transactions[0]["product_id"] == product_id
+	assert transactions[0]["type"] == "OUT"
+	assert transactions[0]["quantity"] == 5
