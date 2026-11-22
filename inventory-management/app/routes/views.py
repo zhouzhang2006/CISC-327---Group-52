@@ -23,7 +23,9 @@ def products_page():
             sku=request.form["sku"],
             unit_price=float(request.form["unit_price"]),
             quantity_on_hand=int(request.form["quantity_on_hand"]),
+            supplier_id=None,
         )
+
         store.products[product_id] = product
         return redirect(url_for("views.products_page"))
     return render_template("products.html", products=store.products.values())
