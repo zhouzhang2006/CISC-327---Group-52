@@ -1,0 +1,24 @@
+README.md
+.gitignore
+.github
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test Coverage
+htmlcov/
+.coverage
