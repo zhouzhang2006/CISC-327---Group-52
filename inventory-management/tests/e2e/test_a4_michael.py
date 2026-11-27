@@ -3,7 +3,7 @@ from playwright.sync_api import Page, expect
 from uuid import uuid4
 
 
-BASE_URL = "http://127.0.0.1:5001"
+BASE_URL = "http://127.0.0.1:5000"
 
 
 def test_create_product_success(page: Page):
