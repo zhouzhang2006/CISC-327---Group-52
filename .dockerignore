@@ -1,24 +1,25 @@
 README.md
-.gitignore
+**/.gitignore
 .github
+inventory-management/tests
 
 # Python
-__pycache__/
-*.pyc
-.pytest_cache/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
 
 # Virtual environments
-.venv/
-venv/
+**/.venv/
+**/venv/
 
 # Editors
 .vscode/
 .idea/
 
 # OS
-.DS_Store
-Thumbs.db
+**/.DS_Store
+**/Thumbs.db
 
 # Test Coverage
-htmlcov/
-.coverage
+**/htmlcov/
+**/.coverage
